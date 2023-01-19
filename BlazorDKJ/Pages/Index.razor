@@ -1,0 +1,87 @@
+﻿@page "/"
+
+@using BlazorDKJ.Models
+
+@using BlazorDKJ.Data
+@using Microsoft.EntityFrameworkCore;
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.DropDowns
+@inject ITbTowarService ServiceTowar
+@inject ITbJm ServiceJm
+@inject mczeContext mczeContext
+
+
+<PageTitle>Index</PageTitle>
+
+
+
+<SfGrid DataSource="@Towar" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" , "Search" })" TValue="Tbtowar">
+    <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"  Mode="EditMode.Dialog"></GridEditSettings>
+    <GridEvents OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompleteHandler" TValue="Tbtowar"></GridEvents>
+    <GridColumns>
+        <GridColumn Field="@nameof(Tbtowar.Idtowar)" IsPrimaryKey="true" IsIdentity="true" Width="120" Visible="true"></GridColumn>
+        <GridColumn Field="@nameof(Tbtowar.Indeks)" Width="150"></GridColumn>
+        <GridColumn Field="@nameof(Tbtowar.Nazwa)" Width="150"></GridColumn>
+        <GridColumn Field="@nameof(Tbtowar.Fjm)" HeaderText="Jm" Width="100">
+            <EditTemplate>
+                <SfDropDownList DataSource="@Jm" TItem="Tbjm" TValue="int"
+                   @bind-Value="@((context as Tbtowar).Idtowar)" >
+                    <DropDownListFieldSettings Text="Jm" Value="Idjm"></DropDownListFieldSettings>
+                </SfDropDownList>
+            </EditTemplate>
+        </GridColumn>
+        <GridColumn Field="@nameof(Tbtowar.Opis)" Width="290" TextAlign="TextAlign.Right"></GridColumn>
+      <GridForeignColumn ForeignDataSource="@Jm" HeaderText="Jm_test"
+          Field="@nameof(Tbtowar.Fjm)"
+            ForeignKeyValue="Jm"></GridForeignColumn>
+      
+    </GridColumns>
+</SfGrid>
+
+@code
+{
+    IEnumerable<Tbtowar> Towar;
+    IEnumerable<Tbjm> Jm;
+    //public List<Tbjm> Jm{ get; set; }
+
+    protected override void OnInitialized()
+    {
+        Towar = ServiceTowar.GetTbtowar().ToList();
+        Jm = ServiceJm.GetTbjm().ToList();
+        Towar = mczeContext.Tbtowar.Include(n => n.FjmNavigation);
+    }
+    public void ActionBeginHandler(ActionEventArgs<Tbtowar> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (Args.Action == "Add")
+            {
+                //  TbUserServise.InsertUser(Args.Data);
+                ServiceTowar.InsertTowar(Args.Data);
+
+
+
+            }
+            else
+            {
+                //  TbTowarService.UpdateUser(Args.Data.Iduser, Args.Data);
+                ServiceTowar.UpdateTowar(Args.Data.Idtowar, Args.Data);
+            }
+        }
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+            //  TbUserServise.DeleteUser(Args.Data.Iduser);
+            ServiceTowar.DeleteTowar(Args.Data.Idtowar);
+
+        }
+    }
+    public void ActionCompleteHandler(ActionEventArgs<Tbtowar> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            // User = TbUserServise.GetTbUsers(); //to fetch the updated data from db to Grid
+            Towar = ServiceTowar.GetTbtowar();
+
+        }
+    }
+}
